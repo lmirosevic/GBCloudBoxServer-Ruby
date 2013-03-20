@@ -19,11 +19,79 @@
 require 'sinatra'
 require 'json'
 
-Resources_path = "GBCloudBoxResources"
+########### Manifest ###########
 
-get "/#{Resources_path}/Facebook.js" do
-	{
-		:v => "3",
-		:url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"
-	}.to_json
+Resources_meta_path = "GBCloudBoxResourcesMeta"
+Resources_data_path = "GBCloudBoxResourcesData"
+Resources_manifest_local = [
+	:"Facebook.js",
+]
+Resources_manifest_external = {
+	# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"},
+}
+
+########### Helpers ###########
+
+def latest_version_for_local_resource(resource)
+	#scour res/#{resource} folder, and fetch the last one 
+	acc = 0
+	local_path = "res/#{resource}"
+
+	Dir.foreach(local_path) do |version|
+		next if version == '.' or version == '..'
+		if version.to_i > acc
+			acc = version.to_i
+		end
+	end
+
+	acc
 end
+
+def public_path_for_local_resource(resource)
+	"https://#{request.host_with_port}/#{Resources_data_path}/#{resource}"
+end
+
+def local_path_for_local_resource(resource)
+	"res/#{resource}/#{latest_version_for_local_resource(resource)}"
+end
+
+########### Config ###########
+
+configure :development do
+	$stdout.sync = true
+end
+
+########### Meta Route ###########
+
+get "/#{Resources_meta_path}/:resource_identifier" do
+	identifier_s = params[:resource_identifier]
+	identifier_sym = identifier_s.to_sym
+
+	#if its a local resource, get the public path. if its an external resource the path is already set
+	if Resources_manifest_local.include? identifier_sym
+		{
+			:v => latest_version_for_local_resource(identifier_s),
+			:url => public_path_for_local_resource(identifier_s)
+		}.to_json
+	elsif (resource = Resources_manifest_external[identifier_sym])
+		resource.to_json
+	else
+		halt 404
+	end
+end
+
+########### Local Resources Route ###########
+
+get "/#{Resources_data_path}/:resource_identifier" do
+	identifier_s = params[:resource_identifier]
+
+	#set headers
+	response.headers['Resource-Version'] = latest_version_for_local_resource(identifier_s).to_s
+
+	#send file
+	send_file(local_path_for_local_resource(identifier_s), :filename => identifier_s)
+
+	# check to see if the folder exists, if so get the latest version, set the Resource-Version http header, return the resource data #foo
+end
+
+# logging
