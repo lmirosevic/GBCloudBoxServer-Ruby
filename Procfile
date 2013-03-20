@@ -1,0 +1,1 @@
+web: bundle exec ruby lib/cloud_box.rb -p $PORT
