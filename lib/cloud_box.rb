@@ -29,6 +29,7 @@ Resources_manifest_local = [
 Resources_manifest_external = {
 	# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"},
 }
+Use_SSL = true
 
 ########### Helpers ###########
 
@@ -48,7 +49,8 @@ def latest_version_for_local_resource(resource)
 end
 
 def public_path_for_local_resource(resource)
-	"https://#{request.host_with_port}/#{Resources_data_path}/#{resource}"
+	protocol = Use_SSL ? "https" : "http"
+	"#{protocol}://#{request.host_with_port}/#{Resources_data_path}/#{resource}"
 end
 
 def local_path_for_local_resource(resource)
@@ -59,6 +61,7 @@ end
 
 configure :development do
 	$stdout.sync = true
+	Use_SSL = false
 end
 
 ########### Meta Route ###########
