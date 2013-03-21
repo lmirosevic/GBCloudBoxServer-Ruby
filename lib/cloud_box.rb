@@ -19,90 +19,93 @@
 require 'sinatra'
 require 'json'
 
-############################################### RESOURCES MANIFEST ###############################################
+class CloudBox < Sinatra::Base
+	############################################### RESOURCES MANIFEST ###############################################
 
-Resources_meta_path = "GBCloudBoxResourcesMeta"
-Resources_data_path = "GBCloudBoxResourcesData"
+	Resources_meta_path = "GBCloudBoxResourcesMeta"
+	Resources_data_path = "GBCloudBoxResourcesData"
 
-Resources_manifest_local = [
-	:"Facebook.js",
-]
-Resources_manifest_external = {
-	# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"},
-}
+	Resources_manifest_local = [
+		:"Facebook.js",
+	]
+	Resources_manifest_external = {
+		# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"},
+	}
 
-############################################### CONFIG ###############################################
+	############################################### CONFIG ###############################################
 
-configure :development do
-	Use_SSL = false
-	set :bind, '0.0.0.0'
-	$stdout.sync = true
-end
+	configure :development do
+		Use_SSL = false
+		set :bind, '0.0.0.0'
+		$stdout.sync = true
+	end
 
-configure :production do
-	Use_SSL = true
+	configure :production do
+		Use_SSL = true
 
-	# Force SSL
-	# require 'rack-ssl-enforcer'
-	# use Rack::SslEnforcer
+		# Force SSL
+		# require 'rack-ssl-enforcer'
+		# use Rack::SslEnforcer
 
-	#New relic
-	require 'newrelic_rpm'
-end
+		#New relic
+		require 'newrelic_rpm'
+	end
 
-############################################### HELPERS ###############################################
+	############################################### HELPERS ###############################################
 
-def latest_version_for_local_resource(resource)
-	#scour res/#{resource} folder, and fetch the last one 
-	acc = 0
-	local_path = "res/#{resource}"
+	def latest_version_for_local_resource(resource)
+		#scour res/#{resource} folder, and fetch the last one 
+		acc = 0
+		local_path = "res/#{resource}"
 
-	Dir.foreach(local_path) do |version|
-		next if version == '.' or version == '..'
-		if version.to_i > acc
-			acc = version.to_i
+		Dir.foreach(local_path) do |version|
+			next if version == '.' or version == '..'
+			if version.to_i > acc
+				acc = version.to_i
+			end
+		end
+
+		acc
+	end
+
+	def public_path_for_local_resource(resource)
+		protocol = Use_SSL ? "https" : "http"
+		"#{protocol}://#{request.host_with_port}/#{Resources_data_path}/#{resource}"
+	end
+
+	def local_path_for_local_resource(resource)
+		"res/#{resource}/#{latest_version_for_local_resource(resource)}"
+	end
+
+	############################################### META ROUTE ###############################################
+
+	get "/#{Resources_meta_path}/:resource_identifier" do
+		identifier_s = params[:resource_identifier]
+		identifier_sym = identifier_s.to_sym
+
+		#if its a local resource, get the public path. if its an external resource the path is already set
+		if Resources_manifest_local.include? identifier_sym
+			{
+				:v => latest_version_for_local_resource(identifier_s),
+				:url => public_path_for_local_resource(identifier_s)
+			}.to_json
+		elsif (resource = Resources_manifest_external[identifier_sym])
+			resource.to_json
+		else
+			halt 404
 		end
 	end
 
-	acc
-end
+	############################################### LOCAL RESOURCE ROUTE ###############################################
 
-def public_path_for_local_resource(resource)
-	protocol = Use_SSL ? "https" : "http"
-	"#{protocol}://#{request.host_with_port}/#{Resources_data_path}/#{resource}"
-end
+	get "/#{Resources_data_path}/:resource_identifier" do
+		identifier_s = params[:resource_identifier]
 
-def local_path_for_local_resource(resource)
-	"res/#{resource}/#{latest_version_for_local_resource(resource)}"
-end
+		#set headers
+		response.headers['Resource-Version'] = latest_version_for_local_resource(identifier_s).to_s
 
-############################################### META ROUTE ###############################################
-
-get "/#{Resources_meta_path}/:resource_identifier" do
-	identifier_s = params[:resource_identifier]
-	identifier_sym = identifier_s.to_sym
-
-	#if its a local resource, get the public path. if its an external resource the path is already set
-	if Resources_manifest_local.include? identifier_sym
-		{
-			:v => latest_version_for_local_resource(identifier_s),
-			:url => public_path_for_local_resource(identifier_s)
-		}.to_json
-	elsif (resource = Resources_manifest_external[identifier_sym])
-		resource.to_json
-	else
-		halt 404
+		#send file
+		send_file(local_path_for_local_resource(identifier_s), :filename => identifier_s)
 	end
-end
 
-############################################### LOCAL RESOURCE ROUTE ###############################################
-
-get "/#{Resources_data_path}/:resource_identifier" do
-	identifier_s = params[:resource_identifier]
-
-	#set headers
-	response.headers['Resource-Version'] = latest_version_for_local_resource(identifier_s).to_s
-
-	#send file
-	send_file(local_path_for_local_resource(identifier_s), :filename => identifier_s)
 end
