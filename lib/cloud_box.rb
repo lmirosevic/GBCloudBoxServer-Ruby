@@ -87,14 +87,14 @@ class CloudBox < Sinatra::Base
 
 		#if its a local resource, get the public path. if its an external resource the path is already set
 		if Resources_manifest_local.include? identifier_sym
-			{
+			body {
 				:v => latest_version_for_local_resource(identifier_s),
 				:url => public_path_for_local_resource(identifier_s)
 			}.to_json
 		elsif (resource = Resources_manifest_external[identifier_sym])
-			resource.to_json
+			body resource.to_json
 		else
-			halt 404
+			ahalt 404
 		end
 	end
 
