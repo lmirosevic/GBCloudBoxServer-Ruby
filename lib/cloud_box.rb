@@ -17,9 +17,11 @@
 # limitations under the License.
 
 require 'sinatra'
+require 'sinatra/async'
 require 'json'
 
 class CloudBox < Sinatra::Base
+	register Sinatra::Async
 	############################################### RESOURCES MANIFEST ###############################################
 
 	Resources_meta_path = "GBCloudBoxResourcesMeta"
@@ -79,7 +81,7 @@ class CloudBox < Sinatra::Base
 
 	############################################### META ROUTE ###############################################
 
-	get "/#{Resources_meta_path}/:resource_identifier" do
+	aget "/#{Resources_meta_path}/:resource_identifier" do
 		identifier_s = params[:resource_identifier]
 		identifier_sym = identifier_s.to_sym
 
@@ -98,7 +100,7 @@ class CloudBox < Sinatra::Base
 
 	############################################### LOCAL RESOURCE ROUTE ###############################################
 
-	get "/#{Resources_data_path}/:resource_identifier" do
+	aget "/#{Resources_data_path}/:resource_identifier" do
 		identifier_s = params[:resource_identifier]
 
 		#set headers
