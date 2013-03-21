@@ -19,19 +19,38 @@
 require 'sinatra'
 require 'json'
 
-########### Manifest ###########
+############################################### RESOURCES MANIFEST ###############################################
 
 Resources_meta_path = "GBCloudBoxResourcesMeta"
 Resources_data_path = "GBCloudBoxResourcesData"
+
 Resources_manifest_local = [
 	:"Facebook.js",
 ]
 Resources_manifest_external = {
 	# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"},
 }
-Use_SSL = true
 
-########### Helpers ###########
+############################################### CONFIG ###############################################
+
+configure :development do
+	Use_SSL = false
+	set :bind, '0.0.0.0'
+	$stdout.sync = true
+end
+
+configure :production do
+	Use_SSL = true
+
+	# Force SSL
+	# require 'rack-ssl-enforcer'
+	# use Rack::SslEnforcer
+
+	#New relic
+	# require 'newrelic_rpm'
+end
+
+############################################### HELPERS ###############################################
 
 def latest_version_for_local_resource(resource)
 	#scour res/#{resource} folder, and fetch the last one 
@@ -57,15 +76,7 @@ def local_path_for_local_resource(resource)
 	"res/#{resource}/#{latest_version_for_local_resource(resource)}"
 end
 
-########### Config ###########
-
-configure :development do
-	set :bind, '0.0.0.0'
-	$stdout.sync = true
-	Use_SSL = false
-end
-
-########### Meta Route ###########
+############################################### META ROUTE ###############################################
 
 get "/#{Resources_meta_path}/:resource_identifier" do
 	identifier_s = params[:resource_identifier]
@@ -84,7 +95,7 @@ get "/#{Resources_meta_path}/:resource_identifier" do
 	end
 end
 
-########### Local Resources Route ###########
+############################################### LOCAL RESOURCE ROUTE ###############################################
 
 get "/#{Resources_data_path}/:resource_identifier" do
 	identifier_s = params[:resource_identifier]
@@ -94,8 +105,4 @@ get "/#{Resources_data_path}/:resource_identifier" do
 
 	#send file
 	send_file(local_path_for_local_resource(identifier_s), :filename => identifier_s)
-
-	# check to see if the folder exists, if so get the latest version, set the Resource-Version http header, return the resource data #foo
 end
-
-# logging
