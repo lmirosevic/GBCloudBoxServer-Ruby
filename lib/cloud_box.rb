@@ -60,6 +60,7 @@ end
 ########### Config ###########
 
 configure :development do
+	set :bind, '0.0.0.0'
 	$stdout.sync = true
 	Use_SSL = false
 end
