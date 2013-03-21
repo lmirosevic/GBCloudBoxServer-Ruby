@@ -47,7 +47,7 @@ configure :production do
 	# use Rack::SslEnforcer
 
 	#New relic
-	# require 'newrelic_rpm'
+	require 'newrelic_rpm'
 end
 
 ############################################### HELPERS ###############################################
