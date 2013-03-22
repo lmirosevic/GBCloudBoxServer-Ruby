@@ -22,12 +22,9 @@ require 'json'
 
 require 'rainbows'
 require 'eventmachine'
-# require 'em-http-request'
 
-class CloudBox < Sinatra::Base
-	register Sinatra::Async
 
-	############################################### RESOURCES MANIFEST ###############################################
+############################################### RESOURCES MANIFEST ###############################################
 
 	RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
 	RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
@@ -38,6 +35,9 @@ class CloudBox < Sinatra::Base
 	RESOURCES_MANIFEST_EXTERNAL = {
 		# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/some/path/Facebook.js"},
 	}
+
+class CloudBox < Sinatra::Base
+	register Sinatra::Async
 
 	############################################### CONFIG ###############################################
 
@@ -96,6 +96,7 @@ class CloudBox < Sinatra::Base
 
 		#if its a local resource, get the public path. if its an external resource the path is already set
 		if RESOURCES_MANIFEST_LOCAL.include? identifier_sym
+			headers 'Content-Type' => "application/json"
 			body({
 				:v => latest_version_for_local_resource(identifier_s),
 				:url => public_path_for_local_resource(identifier_s)
