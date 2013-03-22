@@ -121,7 +121,6 @@ class CloudBox < Sinatra::Base
 			version = latest_version_for_local_resource(identifier_s)
 			length = File.size(path)
 	        filename = identifier_s
-	        # type = Rack::Mime::MIME_TYPES[File.extname(path)[1..-1]] || 'text/plain'
 	        type = "application/octet-stream"
 	        last_modified = File.mtime(path).httpdate
 	        disposition = "attachment; filename=\"#{filename}\""
