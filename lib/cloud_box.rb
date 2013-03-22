@@ -29,26 +29,26 @@ class CloudBox < Sinatra::Base
 
 	############################################### RESOURCES MANIFEST ###############################################
 
-	Resources_meta_path = "GBCloudBoxResourcesMeta"
-	Resources_data_path = "GBCloudBoxResourcesData"
+	RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
+	RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
 
-	Resources_manifest_local = [
+	RESOURCES_MANIFEST_LOCAL = [
 		:"Facebook.js",
 	]
-	Resources_manifest_external = {
-		# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/#{Resources_path}/Facebook.js"},
+	RESOURCES_MANIFEST_EXTERNAL = {
+		# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/some/path/Facebook.js"},
 	}
 
 	############################################### CONFIG ###############################################
 
 	configure :development do
-		Use_SSL = false
+		USE_SSL = false
 		set :bind, '0.0.0.0'
 		$stdout.sync = true
 	end
 
 	configure :production do
-		Use_SSL = true
+		USE_SSL = true
 
 		# Force SSL
 		# require 'rack-ssl-enforcer'
@@ -61,7 +61,6 @@ class CloudBox < Sinatra::Base
 	############################################### HELPERS ###############################################
 
 	def latest_version_for_local_resource(resource)
-		#scour res/#{resource} folder, and fetch the last one 
 		acc = 0
 		local_path = "res/#{resource}"
 
@@ -81,8 +80,8 @@ class CloudBox < Sinatra::Base
 	end
 
 	def public_path_for_local_resource(resource)
-		protocol = Use_SSL ? "https" : "http"
-		"#{protocol}://#{request.host_with_port}/#{Resources_data_path}/#{resource}"
+		protocol = USE_SSL ? "https" : "http"
+		"#{protocol}://#{request.host_with_port}/#{RESOURCES_DATA_PATH}/#{resource}"
 	end
 
 	def local_path_for_local_resource(resource)
@@ -91,17 +90,17 @@ class CloudBox < Sinatra::Base
 
 	############################################### META ROUTE ###############################################
 
-	aget "/#{Resources_meta_path}/:resource_identifier" do
+	aget "/#{RESOURCES_META_PATH}/:resource_identifier" do
 		identifier_s = params[:resource_identifier]
 		identifier_sym = identifier_s.to_sym
 
 		#if its a local resource, get the public path. if its an external resource the path is already set
-		if Resources_manifest_local.include? identifier_sym
+		if RESOURCES_MANIFEST_LOCAL.include? identifier_sym
 			body({
 				:v => latest_version_for_local_resource(identifier_s),
 				:url => public_path_for_local_resource(identifier_s)
 			}.to_json)
-		elsif (resource = Resources_manifest_external[identifier_sym])
+		elsif (resource = RESOURCES_MANIFEST_EXTERNAL[identifier_sym])
 			body(resource.to_json)
 		else
 			ahalt 404
@@ -110,7 +109,7 @@ class CloudBox < Sinatra::Base
 
 	############################################### LOCAL RESOURCE ROUTE ###############################################
 
-	aget "/#{Resources_data_path}/:resource_identifier" do
+	aget "/#{RESOURCES_DATA_PATH}/:resource_identifier" do
 		identifier_s = params[:resource_identifier]
 
 		#get path
@@ -118,8 +117,6 @@ class CloudBox < Sinatra::Base
 
 		#make sure file exists
         if File.file?(path) and File.readable?(path)
-			# if File.exist?(path) and File.readable?(path)
-
 			#get some info about file
 			version = latest_version_for_local_resource(identifier_s)
 			length = File.size(path)
