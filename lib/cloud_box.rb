@@ -20,6 +20,10 @@ require 'sinatra'
 require 'sinatra/async'
 require 'json'
 
+require 'rainbows'
+require 'eventmachine'
+# require 'em-http-request'
+
 class CloudBox < Sinatra::Base
 	register Sinatra::Async
 
