@@ -1,6 +1,4 @@
 (function() {
-    console.log("Loaded javascript version 4");//foo
-
     /* Functions */
 
     //define image processor function
