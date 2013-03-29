@@ -35,6 +35,21 @@ RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
 RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
 ```
 
+Local testing
+------------
+
+First update dependencies (make sure you have bundler installed, if not `gem install bundler` first):
+
+```sh
+bundle update
+```
+
+Then launch using foreman (if you don't have foreman installed: first do `gem install foreman`):
+
+```sh
+foreman start
+```
+
 iOS & Mac OS X Client (Objective-C)
 ------------
 
