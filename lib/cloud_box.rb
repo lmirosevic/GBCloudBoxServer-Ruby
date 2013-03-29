@@ -30,10 +30,10 @@ require 'eventmachine'
 	RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
 
 	RESOURCES_MANIFEST_LOCAL = [
-		:"Facebook.js",
+		:"MyResource.js",
 	]
 	RESOURCES_MANIFEST_EXTERNAL = {
-		# :"Facebook.js" => {:v => "3", :url => "https://www.goonbee.com/some/path/Facebook.js"},
+		# :"ExternalResource.js" => {:v => "3", :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
 	}
 
 class CloudBox < Sinatra::Base
