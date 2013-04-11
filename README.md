@@ -50,6 +50,21 @@ Then launch using foreman (if you don't have foreman installed: first do `gem in
 foreman start
 ```
 
+Implementing your own server
+------------
+
+You can always create your own implementation of the server, the protocol is very simple... you need to implement a `meta` GET url which returns a JSON string like this:
+```json
+{
+	"v": "3",
+	"url": "http://www.my-company.com/path/to/the/actual/resource.zip"
+}
+```
+
+The path to this JSON can be set in the client library, it defaults to `/GBCloudBoxResourcesMeta/resource`. e.g. if your server is at `files.my-company.com` and the resource is called `MyResource.zip`, it will be `https://files.my-company.com/GBCloudBoxResourcesMeta/MyResource.zip`.
+
+That basically tells the client what the latest version is and where to find it. Then just make sure that the resouce (in this case `resource.zip`) is actually available at the url you claim it's at. The client will check the meta path to see if there's a newer version out, and if there is it will get it from the url your server specifies. You can serve the actual file from something like Amazon S3, a CDN, or your own server.
+
 iOS & Mac OS X Client (Objective-C)
 ------------
 
