@@ -32,7 +32,7 @@ RESOURCES_MANIFEST = {
 }
 
 RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
-RESOURCES_DATA_PATH = "GBCloudBoxResourcesData2"
+RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
 
 class CloudBox < Sinatra::Base
   register Sinatra::Async
