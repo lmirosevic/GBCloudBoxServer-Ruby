@@ -27,124 +27,124 @@ require 'eventmachine'
 ############################################### RESOURCES MANIFEST ###############################################
 
 RESOURCES_MANIFEST = {
-	'MyResource.js' => {:v => 4, :path => 'res/MyResource.js'},
-	# 'ExternalResource.js' => {:v => 3, :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
+  'MyResource.js' => {:v => 4, :path => 'res/MyResource.js'},
+  'ExternalResource.js' => {:v => 3, :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
 }
 
 RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
 RESOURCES_DATA_PATH = "GBCloudBoxResourcesData2"
 
 class CloudBox < Sinatra::Base
-	register Sinatra::Async
+  register Sinatra::Async
 
-	############################################### CONFIG ###############################################
+  ############################################### CONFIG ###############################################
 
-	configure :development do
-		USE_SSL = false
-		set :bind, '0.0.0.0'
-		$stdout.sync = true
-	end
+  configure :development do
+    USE_SSL = false
+    set :bind, '0.0.0.0'
+    $stdout.sync = true
+  end
 
-	configure :production do
-		USE_SSL = true
+  configure :production do
+    USE_SSL = true
 
-		#New relic
-		require 'newrelic_rpm'
-	end
+    #New relic
+    require 'newrelic_rpm'
+  end
 
-	############################################### HELPERS ###############################################
+  ############################################### HELPERS ###############################################
 
-	def public_url_for_resource(resource)
-		protocol = USE_SSL ? "https" : "http"
-		"#{protocol}://#{request.host_with_port}/#{RESOURCES_DATA_PATH}/#{resource}"
-	end
+  def public_url_for_resource(resource)
+    protocol = USE_SSL ? "https" : "http"
+    "#{protocol}://#{request.host_with_port}/#{RESOURCES_DATA_PATH}/#{resource}"
+  end
 
-	def local_path_for_local_resource(resource)
-		if RESOURCES_MANIFEST.has_key?(resource)
-			RESOURCES_MANIFEST[resource][:path]
+  def local_path_for_local_resource(resource)
+    if RESOURCES_MANIFEST.has_key?(resource)
+      RESOURCES_MANIFEST[resource][:path]
 
-		else
-			nil
+    else
+      nil
 
-		end
-	end
+    end
+  end
 
-	def version_for_local_resource(resource)
-		if RESOURCES_MANIFEST[resource].has_key?(resource)
-			RESOURCES_MANIFEST[resource][:v]
+  def version_for_local_resource(resource)
+    if RESOURCES_MANIFEST[resource].has_key?(resource)
+      RESOURCES_MANIFEST[resource][:v]
 
-		else
-			nil
+    else
+      nil
 
-		end
-	end
+    end
+  end
 
-	############################################### META ROUTE ###############################################
+  ############################################### META ROUTE ###############################################
 
-	aget "/#{RESOURCES_META_PATH}/:resource" do
-		resource = params[:resource]
+  aget "/#{RESOURCES_META_PATH}/:resource" do
+    resource = params[:resource]
 
-		if RESOURCES_MANIFEST.include?(resource)
-			#get the resource info
-			resource_info = RESOURCES_MANIFEST[resource]
-			version = resource_info[:v]
-			if resource_info.has_key?(:url)
-				url = resource_info[:url]
+    if RESOURCES_MANIFEST.include?(resource)
+      #get the resource info
+      resource_info = RESOURCES_MANIFEST[resource]
+      version = resource_info[:v]
+      if resource_info.has_key?(:url)
+        url = resource_info[:url]
 
-			elsif resource_info.has_key?(:path)
-				url = public_url_for_resource(resource)
+      elsif resource_info.has_key?(:path)
+        url = public_url_for_resource(resource)
 
-			else
-				ahalt 404
-			end
+      else
+        ahalt 404
+      end
 
-			#construct the meta obj
-			meta_obj = {
-				:v => version,
-				:url => url
-			}
+      #construct the meta obj
+      meta_obj = {
+        :v => version,
+        :url => url
+      }
 
-			#return the meta JSON
-			headers 'Content-Type' => "application/json"
-			body(JSON.generate(meta_obj))
-		else
-			ahalt 404
-		end
-	end
+      #return the meta JSON
+      headers 'Content-Type' => "application/json"
+      body(JSON.generate(meta_obj))
+    else
+      ahalt 404
+    end
+  end
 
-	############################################### DATA ROUTE ###############################################
+  ############################################### DATA ROUTE ###############################################
 
-	aget "/#{RESOURCES_DATA_PATH}/:resource" do
-		resource = params[:resource]
+  aget "/#{RESOURCES_DATA_PATH}/:resource" do
+    resource = params[:resource]
 
-		#get path & version
-		path = local_path_for_local_resource(resource)
-		version = version_for_local_resource(resource)
+    #get path & version
+    path = local_path_for_local_resource(resource)
+    version = version_for_local_resource(resource)
 
-		#make sure file exists
+    #make sure file exists
         if File.file?(path) and File.readable?(path)
-			#get some info about file
-			length = File.size(path)
-	        filename = resource
-	        type = "application/octet-stream"
-	        last_modified = File.mtime(path).httpdate
-	        disposition = "attachment; filename=\"#{filename}\""
-	        transfer_encoding = "binary"
+      #get some info about file
+      length = File.size(path)
+          filename = resource
+          type = "application/octet-stream"
+          last_modified = File.mtime(path).httpdate
+          disposition = "attachment; filename=\"#{filename}\""
+          transfer_encoding = "binary"
 
-			#set headers
-			headers(
-				'Resource-Version' 				=> version.to_s,
-				'Content-Length' 				=> length.to_s,
-				'Content-Type' 					=> type.strip,
-				'Content-Disposition' 			=> disposition,
-				'Content-Transfer-Encoding' 	=> transfer_encoding
-			)
+      #set headers
+      headers(
+        'Resource-Version'        => version.to_s,
+        'Content-Length'        => length.to_s,
+        'Content-Type'          => type.strip,
+        'Content-Disposition'       => disposition,
+        'Content-Transfer-Encoding'   => transfer_encoding
+      )
 
-			#send file
-			body File.read(path)
-		else
-			ahalt 404
-		end
-	end
+      #send file
+      body File.read(path)
+    else
+      ahalt 404
+    end
+  end
 
 end
