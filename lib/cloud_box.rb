@@ -79,7 +79,7 @@ class CloudBox < Sinatra::Base
     end
   end
 
-  ############################################### META ROUTE ###############################################
+  ############################################### GBCLOUDBOX META ###############################################
 
   aget "/#{RESOURCES_META_PATH}/:resource" do
     resource = params[:resource]
@@ -112,7 +112,7 @@ class CloudBox < Sinatra::Base
     end
   end
 
-  ############################################### DATA ROUTE ###############################################
+  ############################################### LOCAL RESOURCES SERVER ###############################################
 
   aget "/#{RESOURCES_DATA_PATH}/:resource" do
     resource = params[:resource]
@@ -145,6 +145,12 @@ class CloudBox < Sinatra::Base
     else
       ahalt 404
     end
+  end
+
+  ############################################### PLUMBING ###############################################  
+
+  aget '/alive' do
+      body '777'
   end
 
 end
