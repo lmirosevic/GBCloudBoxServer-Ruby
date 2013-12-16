@@ -19,25 +19,18 @@
 require 'sinatra'
 require 'sinatra/async'
 require 'json'
-
 require 'rainbows'
 require 'eventmachine'
 
+require './lib/manifest.rb'
 
-############################################### RESOURCES MANIFEST ###############################################
-
-RESOURCES_MANIFEST = {
-  'MyResource.js' => {:v => 4, :path => 'res/MyResource.js'},
-  'ExternalResource.js' => {:v => 3, :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
-}
+############################################### CONFIG ###############################################
 
 RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
 RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
 
 class CloudBox < Sinatra::Base
   register Sinatra::Async
-
-  ############################################### CONFIG ###############################################
 
   configure :development do
     USE_SSL = false
