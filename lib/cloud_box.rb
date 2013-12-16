@@ -26,15 +26,13 @@ require 'eventmachine'
 
 ############################################### RESOURCES MANIFEST ###############################################
 
-	RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
-	RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
+RESOURCES_MANIFEST = {
+	'MyResource.js' => {:v => 4, :path => 'res/MyResource.js'},
+	# 'ExternalResource.js' => {:v => 3, :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
+}
 
-	RESOURCES_MANIFEST_LOCAL = [
-		:"MyResource.js",
-	]
-	RESOURCES_MANIFEST_EXTERNAL = {
-		# :"ExternalResource.js" => {:v => "3", :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
-	}
+RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
+RESOURCES_DATA_PATH = "GBCloudBoxResourcesData2"
 
 class CloudBox < Sinatra::Base
 	register Sinatra::Async
@@ -50,78 +48,84 @@ class CloudBox < Sinatra::Base
 	configure :production do
 		USE_SSL = true
 
-		# Force SSL
-		# require 'rack-ssl-enforcer'
-		# use Rack::SslEnforcer
-
 		#New relic
 		require 'newrelic_rpm'
 	end
 
 	############################################### HELPERS ###############################################
 
-	def latest_version_for_local_resource(resource)
-		acc = 0
-		local_path = "res/#{resource}"
-
-		if File.directory?(local_path) and File.readable?(local_path)
-			Dir.foreach(local_path) do |version|
-				next if version == '.' or version == '..'
-				if version.to_i > acc
-					acc = version.to_i
-				end
-			end
-
-			acc
-		else
-			nil
-		end
-
-	end
-
-	def public_path_for_local_resource(resource)
+	def public_url_for_resource(resource)
 		protocol = USE_SSL ? "https" : "http"
 		"#{protocol}://#{request.host_with_port}/#{RESOURCES_DATA_PATH}/#{resource}"
 	end
 
 	def local_path_for_local_resource(resource)
-		"res/#{resource}/#{latest_version_for_local_resource(resource)}"
+		if RESOURCES_MANIFEST.has_key?(resource)
+			RESOURCES_MANIFEST[resource][:path]
+
+		else
+			nil
+
+		end
+	end
+
+	def version_for_local_resource(resource)
+		if RESOURCES_MANIFEST[resource].has_key?(resource)
+			RESOURCES_MANIFEST[resource][:v]
+
+		else
+			nil
+
+		end
 	end
 
 	############################################### META ROUTE ###############################################
 
-	aget "/#{RESOURCES_META_PATH}/:resource_identifier" do
-		identifier_s = params[:resource_identifier]
-		identifier_sym = identifier_s.to_sym
+	aget "/#{RESOURCES_META_PATH}/:resource" do
+		resource = params[:resource]
 
-		#if its a local resource, get the public path. if its an external resource the path is already set
-		if RESOURCES_MANIFEST_LOCAL.include? identifier_sym
+		if RESOURCES_MANIFEST.include?(resource)
+			#get the resource info
+			resource_info = RESOURCES_MANIFEST[resource]
+			version = resource_info[:v]
+			if resource_info.has_key?(:url)
+				url = resource_info[:url]
+
+			elsif resource_info.has_key?(:path)
+				url = public_url_for_resource(resource)
+
+			else
+				ahalt 404
+			end
+
+			#construct the meta obj
+			meta_obj = {
+				:v => version,
+				:url => url
+			}
+
+			#return the meta JSON
 			headers 'Content-Type' => "application/json"
-			body({
-				:v => latest_version_for_local_resource(identifier_s),
-				:url => public_path_for_local_resource(identifier_s)
-			}.to_json)
-		elsif (resource = RESOURCES_MANIFEST_EXTERNAL[identifier_sym])
-			body(resource.to_json)
+			body(JSON.generate(meta_obj))
 		else
 			ahalt 404
 		end
 	end
 
-	############################################### LOCAL RESOURCE ROUTE ###############################################
+	############################################### DATA ROUTE ###############################################
 
-	aget "/#{RESOURCES_DATA_PATH}/:resource_identifier" do
-		identifier_s = params[:resource_identifier]
+	aget "/#{RESOURCES_DATA_PATH}/:resource" do
+		resource = params[:resource]
 
-		#get path
-		path = local_path_for_local_resource(identifier_s)
+		#get path & version
+		path = local_path_for_local_resource(resource)
+		version = version_for_local_resource(resource)
 
 		#make sure file exists
         if File.file?(path) and File.readable?(path)
 			#get some info about file
-			version = latest_version_for_local_resource(identifier_s)
 			length = File.size(path)
-	        filename = identifier_s
+	        filename = resource
 	        type = "application/octet-stream"
 	        last_modified = File.mtime(path).httpdate
 	        disposition = "attachment; filename=\"#{filename}\""
