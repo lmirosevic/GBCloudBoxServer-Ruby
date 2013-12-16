@@ -10,30 +10,25 @@ Dependency management using bundler.  Includes NewRelic monitoring.
 Usage
 ------------
 
-Save your resources in the `./res` folder. Resources should be saved as a folder with numbered files inside to indicate versions. e.g. you would save the file `MyResource.js` version 4 as `./res/MyResource.js/4`. File version should be incrementing integers.
-
-Then add the file to the resource manifest:
+List your files in the resources manifest:
 
 ```ruby
-RESOURCES_MANIFEST_LOCAL = [
-	:"MyResource.js",
-]
-```
-
-Alternatively you can host the resource externally, like on Amazon S3, in which case just point to the latest file url and set a version with it:
-
-```ruby
-RESOURCES_MANIFEST_EXTERNAL = {
-	:"ExternalResource.js" => {:v => "3", :url => "https://s3.amazonaws.com/files.somecompany.com/some/path/ExternalResource.js"},
+RESOURCES_MANIFEST = {
+	'SomeResource.js' => {:v => 4, :path => 'res/SomeResource.js'},
+	'SomeOtherExternalResource.js' => {:v => 3, :url => 'https://s3.amazonaws.com/files.somecompany.com/some/path/SomeOtherExternalResource.js'},
 }
 ```
 
-You can configure the server API path using (make sure to set the same thing in client):
+Notice how resources can point to both an internal path like `res/MyResource.js`, or an external URL like `https://s3.amazonaws.com/files.somecompany.com/some/path/SomeOtherExternalResource.js`.
+
+You can configure the server API paths if you need to (make sure to set the same thing in client):
 
 ```ruby
 RESOURCES_META_PATH = "GBCloudBoxResourcesMeta"
 RESOURCES_DATA_PATH = "GBCloudBoxResourcesData"
 ```
+
+That's it. Client library will take care of the rest.
 
 Local testing
 ------------
@@ -61,7 +56,7 @@ You can always create your own implementation of the server, the protocol is ver
 }
 ```
 
-The path to this JSON can be set in the client library, it defaults to `/GBCloudBoxResourcesMeta/resource`. e.g. if your server is at `files.my-company.com` and the resource is called `MyResource.zip`, it will be `https://files.my-company.com/GBCloudBoxResourcesMeta/MyResource.zip`.
+The path to this JSON can be set in the client library, it defaults to `/GBCloudBoxResourcesMeta/<resource>`. e.g. if your server is at `files.my-company.com` and the resource is called `MyResource.zip`, it will be `https://files.my-company.com/GBCloudBoxResourcesMeta/MyResource.zip`.
 
 That basically tells the client what the latest version is and where to find it. Then just make sure that the resouce (in this case `resource.zip`) is actually available at the url you claim it's at. The client will check the meta path to see if there's a newer version out, and if there is it will get it from the url your server specifies. You can serve the actual file from something like Amazon S3, a CDN, or your own server.
 
